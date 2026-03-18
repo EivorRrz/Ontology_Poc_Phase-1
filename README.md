@@ -4,8 +4,6 @@ A proof-of-concept ontology platform with two AI-powered agents: **Agent-01** bu
 
 ---
 
----
-
 ## Quick Start
 
 ```bash
