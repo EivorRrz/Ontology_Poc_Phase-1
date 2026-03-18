@@ -191,7 +191,3 @@ LOG_LEVEL=info
 </details>
 
 ---
-
-## License
-
-MIT
