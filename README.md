@@ -4,14 +4,6 @@ A proof-of-concept ontology platform with two AI-powered agents: **Agent-01** bu
 
 ---
 
-## Prerequisites
-
-- **Node.js** 18+
-- **MongoDB** (for Agent-01)
-- **Neo4j** (for Agent-01)
-- **Azure OpenAI** API key (for LLM features)
-- **Ollama** (optional, for local LLM in Agent-02 root)
-
 ---
 
 ## Quick Start
