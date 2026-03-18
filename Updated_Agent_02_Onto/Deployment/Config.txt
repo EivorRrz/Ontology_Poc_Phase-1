@@ -1,0 +1,6 @@
+#The Flow for the wwb-Config(this config tells iis how to run my nodes app..!)
+1->Handlers...Who handeles the request..!
+2->Rewrite Rules...(Hows url are routed)
+3->Security->what is allowed/blocked..!
+4->RunTime Settings->it tells how issnode have to run..!
+(environments,logs..etc..!)

@@ -1,0 +1,126 @@
+{
+  "Portfolio": {
+    "portfolio_id": "VARCHAR(50) PRIMARY KEY",
+    "portfolio_identifier": "VARCHAR(50) UNIQUE",
+    "portfolio_name": "VARCHAR(100)",
+    "portfolio_type": "VARCHAR(50)",
+    "base_currency": "CHAR(3)",
+    "inception_date": "DATE",
+    "status": "VARCHAR(20)"
+  },
+  "SecurityMaster": {
+    "security_id": "VARCHAR(50) PRIMARY KEY",
+    "cusip": "VARCHAR(9)",
+    "sedol": "VARCHAR(7)",
+    "isin": "VARCHAR(12)",
+    "instrument_type": "VARCHAR(50)",
+    "security_description": "VARCHAR(255)",
+    "country": "VARCHAR(50)",
+    "risk_country": "VARCHAR(50)",
+    "issue_date": "DATE",
+    "maturity_date": "DATE",
+    "coupon_rate": "DECIMAL(6,4)",
+    "currency": "CHAR(3)"
+  },
+  "Position": {
+    "position_id": "VARCHAR(50) PRIMARY KEY",
+    "portfolio_id": "VARCHAR(50) FOREIGN KEY",
+    "security_id": "VARCHAR(50) FOREIGN KEY",
+    "position_date": "DATE",
+    "quantity": "DECIMAL(18,6)",
+    "face_value": "DECIMAL(18,2)",
+    "market_value": "DECIMAL(18,2)",
+    "accrued_interest": "DECIMAL(18,2)"
+  },
+  "HoldingBalance": {
+    "holding_id": "VARCHAR(50) PRIMARY KEY",
+    "portfolio_id": "VARCHAR(50) FOREIGN KEY",
+    "security_id": "VARCHAR(50) FOREIGN KEY",
+    "as_of_date": "DATE",
+    "market_value": "DECIMAL(18,2)",
+    "accrued_interest": "DECIMAL(18,2)",
+    "book_value": "DECIMAL(18,2)",
+    "unrealized_pnl": "DECIMAL(18,2)",
+    "UNIQUE": ["portfolio_id", "security_id", "as_of_date"]
+  },
+  "Valuation": {
+    "valuation_id": "VARCHAR(50) PRIMARY KEY",
+    "security_id": "VARCHAR(50) FOREIGN KEY",
+    "valuation_date": "DATE",
+    "price_used": "DECIMAL(18,6)",
+    "clean_market_value": "DECIMAL(18,2)",
+    "dirty_market_value": "DECIMAL(18,2)",
+    "accrued_interest": "DECIMAL(18,2)",
+    "currency": "CHAR(3)"
+  },
+  "TradeConfirmation": {
+    "confirmation_id": "VARCHAR(50) PRIMARY KEY",
+    "trade_order_id": "VARCHAR(50)",
+    "trade_date": "DATE",
+    "counterparty": "VARCHAR(100)",
+    "trade_status": "VARCHAR(20)"
+  },
+  "TradeSettlement": {
+    "settlement_id": "VARCHAR(50) PRIMARY KEY",
+    "trade_order_id": "VARCHAR(50) FOREIGN KEY",
+    "settlement_date": "DATE",
+    "settlement_amount": "DECIMAL(18,2)",
+    "settlement_currency": "CHAR(3)",
+    "settlement_status": "VARCHAR(20)"
+  },
+  "Benchmark": {
+    "benchmark_id": "VARCHAR(50) PRIMARY KEY",
+    "benchmark_name": "VARCHAR(100)",
+    "benchmark_type": "VARCHAR(50)",
+    "base_currency": "CHAR(3)",
+    "effective_date": "DATE",
+    "expiry_date": "DATE"
+  },
+  "PortfolioBenchmark": {
+    "portfolio_id": "VARCHAR(50) FOREIGN KEY",
+    "benchmark_id": "VARCHAR(50) FOREIGN KEY",
+    "allocation_pct": "DECIMAL(5,2)",
+    "PRIMARY KEY": ["portfolio_id", "benchmark_id"]
+  },
+  "PortfolioPerformance": {
+    "performance_id": "VARCHAR(50) PRIMARY KEY",
+    "portfolio_id": "VARCHAR(50) FOREIGN KEY",
+    "as_of_date": "DATE",
+    "portfolio_return": "DECIMAL(8,4)",
+    "benchmark_return": "DECIMAL(8,4)",
+    "alpha": "DECIMAL(10,6)",
+    "beta": "DECIMAL(10,6)",
+    "sharpe_ratio": "DECIMAL(8,4)",
+    "volatility": "DECIMAL(8,4)",
+    "UNIQUE": ["portfolio_id", "as_of_date"]
+  },
+  "PerformanceAttribution": {
+    "attribution_id": "VARCHAR(50) PRIMARY KEY",
+    "portfolio_id": "VARCHAR(50) FOREIGN KEY",
+    "asset_class_code": "VARCHAR(20) FOREIGN KEY",
+    "contribution_to_return": "DECIMAL(8,4)",
+    "contribution_to_risk": "DECIMAL(8,4)",
+    "attribution_date": "DATE"
+  },
+  "RiskMetrics": {
+    "risk_id": "VARCHAR(50) PRIMARY KEY",
+    "portfolio_id": "VARCHAR(50) FOREIGN KEY",
+    "as_of_date": "DATE",
+    "var": "DECIMAL(18,4)",
+    "cvar": "DECIMAL(18,4)",
+    "beta": "DECIMAL(10,6)",
+    "duration": "DECIMAL(8,4)",
+    "volatility": "DECIMAL(8,4)",
+    "UNIQUE": ["portfolio_id", "as_of_date"]
+  },
+  "AssetClass": {
+    "asset_class_code": "VARCHAR(20) PRIMARY KEY",
+    "asset_class_name": "VARCHAR(50)"
+  },
+  "ExchangeCalendar": {
+    "exchange_id": "VARCHAR(20) PRIMARY KEY",
+    "holiday_date": "DATE",
+    "holiday_name": "VARCHAR(100)",
+    "trading_status": "VARCHAR(20)"
+  }
+}

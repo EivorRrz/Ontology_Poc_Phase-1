@@ -1,0 +1,6 @@
+[submodule "Agent-01_Updated"]
+	path = Agent-01_Updated
+	url = https://github.com/EivorRrz/Agent-01_Updated.git
+[submodule "Updated_Agent_02_Onto"]
+	path = Updated_Agent_02_Onto
+	url = https://github.com/EivorRrz/Updated_Agent_02_Onto.git

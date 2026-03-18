@@ -1,0 +1,277 @@
+{
+  "dataTypes": {
+    "client_id": {
+      "type": "VARCHAR",
+      "confidence": 0.8,
+      "count": 2
+    },
+    "pmt_end_adj": {
+      "type": "TIMESTAMP",
+      "confidence": 0.8,
+      "count": 2
+    },
+    "compound": {
+      "type": "VARCHAR",
+      "confidence": 0.8,
+      "count": 2
+    },
+    "erisa": {
+      "type": "BOOLEAN",
+      "confidence": 0.8500000000000001,
+      "count": 2
+    },
+    "calc_type": {
+      "type": "VARCHAR",
+      "confidence": 0.8,
+      "count": 2
+    },
+    "notional_amt": {
+      "type": "DECIMAL",
+      "confidence": 0.8,
+      "count": 2
+    },
+    "reset_freq": {
+      "type": "DECIMAL",
+      "confidence": 0.8,
+      "count": 2
+    },
+    "life_floor": {
+      "type": "DECIMAL",
+      "confidence": 0.8,
+      "count": 2
+    },
+    "life_cap": {
+      "type": "DECIMAL",
+      "confidence": 0.8,
+      "count": 2
+    },
+    "multiplier": {
+      "type": "DECIMAL",
+      "confidence": 0.8,
+      "count": 2
+    },
+    "lookback": {
+      "type": "DECIMAL",
+      "confidence": 0.8,
+      "count": 2
+    },
+    "desc_instmt": {
+      "type": "VARCHAR",
+      "confidence": 0.8,
+      "count": 2
+    },
+    "currency": {
+      "type": "VARCHAR",
+      "confidence": 0.8,
+      "count": 2
+    },
+    "sec_currency": {
+      "type": "VARCHAR",
+      "confidence": 0.8,
+      "count": 2
+    },
+    "accrual_date": {
+      "type": "TIMESTAMP",
+      "confidence": 0.8500000000000001,
+      "count": 2
+    },
+    "accrued_int": {
+      "type": "DECIMAL",
+      "confidence": 0.875,
+      "count": 2
+    },
+    "base_commitment": {
+      "type": "DECIMAL",
+      "confidence": 0.875,
+      "count": 2
+    },
+    "base_contribution": {
+      "type": "DECIMAL",
+      "confidence": 0.875,
+      "count": 2
+    },
+    "base_currency": {
+      "type": "VARCHAR",
+      "confidence": 0.8,
+      "count": 2
+    },
+    "base_distribution": {
+      "type": "DECIMAL",
+      "confidence": 0.875,
+      "count": 2
+    },
+    "book_date_2": {
+      "type": "TIMESTAMP",
+      "confidence": 0.8500000000000001,
+      "count": 2
+    },
+    "book_date_3": {
+      "type": "TIMESTAMP",
+      "confidence": 0.9,
+      "count": 1
+    },
+    "book_date_4": {
+      "type": "TIMESTAMP",
+      "confidence": 0.9,
+      "count": 1
+    },
+    "book_date_5": {
+      "type": "TIMESTAMP",
+      "confidence": 0.9,
+      "count": 1
+    },
+    "pay_fx_reference": {
+      "type": "VARCHAR",
+      "confidence": 0.8,
+      "count": 1
+    },
+    "pos_start_date": {
+      "type": "TIMESTAMP",
+      "confidence": 0.975,
+      "count": 2
+    },
+    "pos_stop_date": {
+      "type": "TIMESTAMP",
+      "confidence": 0.975,
+      "count": 2
+    },
+    "price_date": {
+      "type": "TIMESTAMP",
+      "confidence": 0.875,
+      "count": 2
+    },
+    "source": {
+      "type": "VARCHAR",
+      "confidence": 0.8,
+      "count": 1
+    },
+    "strategy": {
+      "type": "DECIMAL",
+      "confidence": 0.8,
+      "count": 1
+    },
+    "ticker": {
+      "type": "VARCHAR",
+      "confidence": 0.8,
+      "count": 1
+    },
+    "total_recallable_distrib": {
+      "type": "DECIMAL",
+      "confidence": 0.9,
+      "count": 2
+    },
+    "trd_commission": {
+      "type": "DECIMAL",
+      "confidence": 0.9,
+      "count": 2
+    },
+    "trd_coupon": {
+      "type": "DECIMAL",
+      "confidence": 0.9,
+      "count": 2
+    },
+    "ord_num": {
+      "type": "VARCHAR",
+      "confidence": 0.8,
+      "count": 1
+    },
+    "trd_factor": {
+      "type": "DECIMAL",
+      "confidence": 0.9,
+      "count": 1
+    },
+    "trd_factor_date": {
+      "type": "TIMESTAMP",
+      "confidence": 0.9,
+      "count": 1
+    }
+  },
+  "pkPatterns": {
+    "_id": {
+      "confidence": 0.9,
+      "count": 2
+    }
+  },
+  "fkPatterns": {},
+  "relationships": [],
+  "optimizations": [
+    {
+      "table": "sec_master",
+      "column": "client_id",
+      "suggestion": "Add an index on the 'client_id' column.",
+      "impact": "high",
+      "timestamp": "2026-02-22T20:55:11.895Z"
+    },
+    {
+      "table": "position",
+      "column": "client_id",
+      "suggestion": "Add an index on the 'client_id' column.",
+      "impact": "high",
+      "timestamp": "2026-02-22T20:55:11.897Z"
+    },
+    {
+      "table": "trade",
+      "column": "security_client_id",
+      "suggestion": "Add an index on the 'security_client_id' column.",
+      "impact": "high",
+      "timestamp": "2026-02-22T20:55:11.898Z"
+    },
+    {
+      "table": "sec_master",
+      "column": "country",
+      "suggestion": "Change the data type of the 'country' column from INTEGER to VARCHAR(3) to store ISO country codes.",
+      "impact": "medium",
+      "timestamp": "2026-02-22T20:55:11.899Z"
+    },
+    {
+      "table": "sec_master",
+      "column": "risk_country",
+      "suggestion": "Change the data type of the 'risk_country' column from INTEGER to VARCHAR(3) to store ISO country codes.",
+      "impact": "medium",
+      "timestamp": "2026-02-22T20:55:11.901Z"
+    },
+    {
+      "table": "position",
+      "column": "client_id",
+      "suggestion": "Add an index on the 'client_id' column.",
+      "impact": "high",
+      "timestamp": "2026-02-22T21:10:43.530Z"
+    },
+    {
+      "table": "trade",
+      "column": "security_client_id",
+      "suggestion": "Add an index on the 'security_client_id' column.",
+      "impact": "high",
+      "timestamp": "2026-02-22T21:10:43.532Z"
+    },
+    {
+      "table": "sec_master",
+      "column": "client_id",
+      "suggestion": "Add an index on the 'client_id' column.",
+      "impact": "high",
+      "timestamp": "2026-02-22T21:10:43.533Z"
+    },
+    {
+      "table": "position",
+      "column": "brs_sec_id",
+      "suggestion": "Create a composite index on 'brs_sec_id' and 'client_id'.",
+      "impact": "high",
+      "timestamp": "2026-02-22T21:10:43.534Z"
+    },
+    {
+      "table": "trade",
+      "column": "trade_date",
+      "suggestion": "Add an index on the 'trade_date' column.",
+      "impact": "medium",
+      "timestamp": "2026-02-22T21:10:43.535Z"
+    },
+    {
+      "table": "position",
+      "column": "portfolio",
+      "suggestion": "Add an index on the 'portfolio' column.",
+      "impact": "medium",
+      "timestamp": "2026-02-22T21:10:43.537Z"
+    }
+  ],
+  "lastUpdated": "2026-02-22T21:10:43.537Z"
+}

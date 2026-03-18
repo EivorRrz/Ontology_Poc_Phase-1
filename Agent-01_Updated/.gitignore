@@ -1,0 +1,31 @@
+# Dependencies
+node_modules/
+
+# Environment (never commit secrets)
+.env
+.env.local
+.env.*.local
+
+# Data and outputs (ignore contents, keep folder structure)
+data/
+cypher-output/
+uploads/*
+!uploads/.gitkeep
+watch/processed/*
+!watch/processed/.gitkeep
+watch/error/*
+!watch/error/.gitkeep
+
+# Logs
+*.log
+npm-debug.log*
+
+# OS
+.DS_Store
+Thumbs.db
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo

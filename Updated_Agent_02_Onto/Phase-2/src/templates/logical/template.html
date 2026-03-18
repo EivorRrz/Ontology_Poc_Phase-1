@@ -1,0 +1,1272 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Logical Model Interactive Viewer</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #f5f5f5;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+        #header {
+            background: linear-gradient(135deg, #059669 0%, #0d9488 100%);
+            color: white;
+            padding: 15px 20px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-shrink: 0;
+        }
+        #header h1 { font-size: 20px; font-weight: 600; }
+        #main-container {
+            display: flex;
+            flex: 1;
+            overflow: hidden;
+        }
+        #sidebar {
+            width: 300px;
+            background: white;
+            border-right: 2px solid #e0e0e0;
+            overflow-y: auto;
+            padding: 20px;
+            flex-shrink: 0;
+        }
+        #content {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            background: #fafafa;
+        }
+        #erd-container {
+            flex: 1;
+            position: relative;
+            overflow: hidden;
+            background: #f5f5f5;
+            cursor: grab;
+        }
+        #erd-container.panning {
+            cursor: grabbing;
+        }
+        #erd-canvas {
+            width: 100%;
+            height: 100%;
+            position: relative;
+            transform-origin: 0 0;
+            transition: transform 0.1s ease-out;
+        }
+        .zoom-controls {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            z-index: 1000;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            background: white;
+            padding: 10px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+        #erd-container:hover .zoom-controls {
+            opacity: 1;
+        }
+        .presentation-mode .zoom-controls {
+            display: none;
+        }
+        .presentation-mode #erd-container {
+            cursor: default;
+        }
+        .presentation-mode .table-box {
+            cursor: default;
+            pointer-events: none;
+        }
+        .zoom-btn {
+            width: 40px;
+            height: 40px;
+            border: 1px solid #ddd;
+            background: white;
+            border-radius: 4px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+            font-weight: bold;
+            color: #333;
+            transition: all 0.2s;
+        }
+        .zoom-btn:hover {
+            background: #f0f0f0;
+            border-color: #059669;
+        }
+        .zoom-btn:active {
+            background: #e0e0e0;
+        }
+        .zoom-level {
+            text-align: center;
+            font-size: 12px;
+            color: #666;
+            padding: 5px;
+            border-top: 1px solid #eee;
+            margin-top: 5px;
+        }
+        .grid-background {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-image: 
+                linear-gradient(to right, #e8e8e8 1px, transparent 1px),
+                linear-gradient(to bottom, #e8e8e8 1px, transparent 1px);
+            background-size: 40px 40px;
+            pointer-events: none;
+            opacity: 0.5;
+        }
+        #erd-svg {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+        }
+        .table-box {
+            position: absolute;
+            background: white;
+            border: 2px solid #333;
+            border-radius: 4px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            min-width: 200px;
+            max-width: 240px;
+            cursor: move;
+            user-select: none;
+            display: flex;
+            flex-direction: column;
+            max-height: 400px;
+        }
+        .table-box.fact-table {
+            border: 3px solid #1a1a1a;
+            min-width: 240px;
+            max-width: 280px;
+            box-shadow: 0 3px 12px rgba(0,0,0,0.2);
+        }
+        .table-box.dimension-table {
+            border: 2px solid #999;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.08);
+        }
+        .table-box.dragging {
+            opacity: 0.8;
+            z-index: 1000;
+            cursor: grabbing;
+        }
+        .table-header {
+            background: #e5e5e5;
+            color: #1a1a1a;
+            padding: 8px 12px;
+            font-weight: bold;
+            font-size: 14px;
+            border-bottom: 1px solid #ccc;
+            flex-shrink: 0;
+        }
+        .table-header.fact-header {
+            background: #d0d0d0;
+            border-bottom: 2px solid #1a1a1a;
+        }
+        .table-body {
+            overflow-y: auto;
+            overflow-x: hidden;
+            flex: 1;
+            max-height: 350px;
+        }
+        .table-body::-webkit-scrollbar {
+            width: 6px;
+        }
+        .table-body::-webkit-scrollbar-track {
+            background: #f1f1f1;
+        }
+        .table-body::-webkit-scrollbar-thumb {
+            background: #888;
+            border-radius: 3px;
+        }
+        .table-body::-webkit-scrollbar-thumb:hover {
+            background: #555;
+        }
+        .table-column {
+            padding: 6px 12px;
+            border-bottom: 1px solid #e0e0e0;
+            font-size: 12px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            line-height: 1.5;
+            min-height: 24px;
+        }
+        .table-column:last-child {
+            border-bottom: none;
+        }
+        .column-name {
+            flex: 1;
+            font-weight: 400;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            color: #1a1a1a;
+        }
+        .column-type {
+            color: #666;
+            font-size: 12px;
+            font-family: 'Courier New', 'Consolas', monospace;
+            margin-left: 12px;
+            text-align: right;
+            min-width: 80px;
+        }
+        .column-badges {
+            display: flex;
+            gap: 4px;
+            margin-left: 8px;
+        }
+        .badge {
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-size: 10px;
+            font-weight: bold;
+        }
+        .badge-pk {
+            background: #fbbf24;
+            color: #78350f;
+        }
+        .badge-fk {
+            background: #3b82f6;
+            color: white;
+        }
+        .relationship-line {
+            stroke: #333;
+            stroke-width: 2.5;
+            fill: none;
+            marker-end: url(#crowfoot);
+        }
+        .relationship-label-box {
+            font-size: 10px;
+            fill: #333;
+            background: white;
+            stroke: #666;
+            stroke-width: 1;
+            rx: 3;
+            ry: 3;
+        }
+        .relationship-label-text {
+            font-size: 10px;
+            fill: #333;
+            font-weight: 500;
+            text-anchor: middle;
+            dominant-baseline: middle;
+        }
+        .cardinality-box {
+            font-size: 9px;
+            fill: white;
+            stroke: #333;
+            stroke-width: 1.5;
+            rx: 2;
+            ry: 2;
+        }
+        .cardinality-text {
+            font-size: 9px;
+            fill: #333;
+            font-weight: bold;
+            text-anchor: middle;
+            dominant-baseline: middle;
+        }
+        .breadcrumb {
+            padding: 10px 15px;
+            background: white;
+            border-bottom: 1px solid #e0e0e0;
+            display: flex;
+            gap: 10px;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+        .breadcrumb-item {
+            color: #059669;
+            cursor: pointer;
+            font-weight: 500;
+            padding: 5px 10px;
+            border-radius: 5px;
+            transition: background 0.2s;
+        }
+        .breadcrumb-item:hover {
+            background: #f0f0f0;
+            text-decoration: underline;
+        }
+        .breadcrumb-separator {
+            color: #999;
+        }
+        .domain-item, .subdomain-item, .entity-item {
+            padding: 12px 15px;
+            margin: 5px 0;
+            background: #f8f9fa;
+            border-left: 4px solid #059669;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        .domain-item:hover, .subdomain-item:hover, .entity-item:hover {
+            background: #e9ecef;
+            transform: translateX(5px);
+        }
+        .domain-item {
+            font-weight: 600;
+            font-size: 16px;
+            border-left-color: #059669;
+        }
+        .subdomain-item {
+            margin-left: 20px;
+            font-weight: 500;
+            font-size: 14px;
+            border-left-color: #0d9488;
+        }
+        .entity-item {
+            margin-left: 40px;
+            font-size: 13px;
+            border-left-color: #10b981;
+        }
+        .entity-details {
+            background: white;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .entity-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+            padding-bottom: 15px;
+            border-bottom: 2px solid #e0e0e0;
+        }
+        .entity-name {
+            font-size: 24px;
+            font-weight: 700;
+            color: #1e3c72;
+        }
+        .entity-description {
+            color: #666;
+            font-style: italic;
+            margin-top: 5px;
+        }
+        .entity-stats {
+            display: flex;
+            gap: 15px;
+        }
+        .stat-badge {
+            padding: 5px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+        .stat-badge.attributes { background: #e3f2fd; color: #1976d2; }
+        .stat-badge.pk { background: #e8f5e9; color: #388e3c; }
+        .stat-badge.fk { background: #fff3e0; color: #f57c00; }
+        .attribute-row {
+            display: grid;
+            grid-template-columns: 2fr 1fr 1fr;
+            gap: 15px;
+            padding: 12px;
+            border-bottom: 1px solid #f0f0f0;
+            align-items: center;
+        }
+        .attribute-row:last-child { border-bottom: none; }
+        .attribute-row:hover { background: #f8f9ff; }
+        .attribute-name {
+            font-weight: 600;
+            color: #333;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .attribute-type {
+            color: #059669;
+            font-family: 'Courier New', monospace;
+            font-size: 13px;
+            font-weight: 500;
+        }
+        .attribute-props {
+            display: flex;
+            gap: 5px;
+            flex-wrap: wrap;
+        }
+        .badge {
+            padding: 3px 8px;
+            border-radius: 3px;
+            font-size: 10px;
+            font-weight: 600;
+            display: inline-block;
+        }
+        .badge-pk { background: #10b981; color: white; }
+        .badge-fk { background: #f59e0b; color: white; }
+        .badge-unique { background: #8b5cf6; color: white; }
+        .badge-nn { background: #ef4444; color: white; }
+        .badge-default { background: #3b82f6; color: white; }
+        .badge-check { background: #ec4899; color: white; }
+        .badge-ai { background: #06b6d4; color: white; }
+        .attribute-details {
+            grid-column: 1 / -1;
+            font-size: 12px;
+            color: #666;
+            margin-top: 5px;
+            padding-left: 5px;
+        }
+        .attribute-description {
+            font-style: italic;
+            color: #888;
+        }
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: #999;
+        }
+        .empty-state h2 {
+            font-size: 24px;
+            margin-bottom: 10px;
+        }
+        .empty-state p {
+            font-size: 14px;
+        }
+    </style>
+</head>
+<body>
+    <div id="header">
+        <h1>📋 Logical Model Interactive Viewer</h1>
+    </div>
+    
+    <div id="main-container">
+        <div id="sidebar">
+            <div id="navigation"></div>
+        </div>
+        
+        <div id="content" class="drilldown-view">
+            <!-- Breadcrumb removed from canvas - navigation is sidebar only -->
+            <div id="erd-container">
+                <div class="zoom-controls">
+                    <button class="zoom-btn" onclick="zoomIn()" title="Zoom In">+</button>
+                    <button class="zoom-btn" onclick="zoomOut()" title="Zoom Out">−</button>
+                    <button class="zoom-btn" onclick="resetZoom()" title="Reset Zoom">⌂</button>
+                    <button class="zoom-btn" onclick="applyStarLayout()" title="Star Schema Layout">★</button>
+                    <button class="zoom-btn" onclick="togglePresentationMode()" title="Presentation Mode">📷</button>
+                    <div class="zoom-level" id="zoom-level">100%</div>
+                </div>
+                <div class="grid-background"></div>
+                <svg id="erd-svg"></svg>
+                <div id="erd-canvas"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Logical Model Data
+        // Data is injected by generator from templates directory
+        const hierarchical = {{HIERARCHICAL_DATA}};
+        const logicalData = {{LOGICAL_DATA}};
+        const relationships = {{RELATIONSHIPS_DATA}};
+        
+        // Extract relationships from logicalData if not provided
+        if (relationships.length === 0) {
+            for (const [domainName, domain] of Object.entries(logicalData)) {
+                for (const [subDomainName, subDomain] of Object.entries(domain)) {
+                    for (const [entityName, entity] of Object.entries(subDomain)) {
+                        for (const attr of entity.attributes) {
+                            if (attr.isFK && attr.refEntity) {
+                                relationships.push({
+                                    from: attr.refEntity,
+                                    to: entityName,
+                                    fromCol: attr.refAttribute || 'id',
+                                    toCol: attr.attributeName
+                                });
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        
+        // Table positions storage
+        const tablePositions = new Map();
+        
+        // Zoom and Pan state
+        let zoomLevel = 1;
+        let panX = 0;
+        let panY = 0;
+        let isPanning = false;
+        let panStartX = 0;
+        let panStartY = 0;
+        let isDragging = false;
+        let dragElement = null;
+        let dragOffsetX = 0;
+        let dragOffsetY = 0;
+        
+        // Current state
+        let currentDomain = null;
+        let currentSubDomain = null;
+        let currentEntity = null;
+        
+        // Initialize
+        renderNavigation();
+        showDomains();
+        applyTransform(); // Initialize zoom/pan transform
+        
+        // Render ERD diagram based on current selection
+        function renderERD() {
+            const canvas = document.getElementById('erd-canvas');
+            const svg = document.getElementById('erd-svg');
+            
+            // Clear previous content
+            canvas.innerHTML = '';
+            svg.innerHTML = '';
+            
+            // Create crow's foot marker definitions with optionality
+            const defs = document.createElementNS('http://www.w3.org/2000/svg', 'defs');
+            
+            // Mandatory many (solid crow's foot)
+            const markerMandatory = document.createElementNS('http://www.w3.org/2000/svg', 'marker');
+            markerMandatory.setAttribute('id', 'crowfoot-mandatory');
+            markerMandatory.setAttribute('markerWidth', '12');
+            markerMandatory.setAttribute('markerHeight', '12');
+            markerMandatory.setAttribute('refX', '10');
+            markerMandatory.setAttribute('refY', '6');
+            markerMandatory.setAttribute('orient', 'auto');
+            markerMandatory.setAttribute('markerUnits', 'userSpaceOnUse');
+            
+            const groupMandatory = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+            const line1 = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+            line1.setAttribute('x1', '0');
+            line1.setAttribute('y1', '3');
+            line1.setAttribute('x2', '0');
+            line1.setAttribute('y2', '9');
+            line1.setAttribute('stroke', '#333');
+            line1.setAttribute('stroke-width', '2');
+            groupMandatory.appendChild(line1);
+            const line2 = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+            line2.setAttribute('x1', '0');
+            line2.setAttribute('y1', '6');
+            line2.setAttribute('x2', '8');
+            line2.setAttribute('y2', '2');
+            line2.setAttribute('stroke', '#333');
+            line2.setAttribute('stroke-width', '2');
+            groupMandatory.appendChild(line2);
+            const line3 = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+            line3.setAttribute('x1', '0');
+            line3.setAttribute('y1', '6');
+            line3.setAttribute('x2', '8');
+            line3.setAttribute('y2', '10');
+            line3.setAttribute('stroke', '#333');
+            line3.setAttribute('stroke-width', '2');
+            groupMandatory.appendChild(line3);
+            markerMandatory.appendChild(groupMandatory);
+            defs.appendChild(markerMandatory);
+            
+            // Optional many (crow's foot with open circle)
+            const markerOptional = document.createElementNS('http://www.w3.org/2000/svg', 'marker');
+            markerOptional.setAttribute('id', 'crowfoot-optional');
+            markerOptional.setAttribute('markerWidth', '14');
+            markerOptional.setAttribute('markerHeight', '14');
+            markerOptional.setAttribute('refX', '12');
+            markerOptional.setAttribute('refY', '7');
+            markerOptional.setAttribute('orient', 'auto');
+            markerOptional.setAttribute('markerUnits', 'userSpaceOnUse');
+            
+            const groupOptional = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+            const circle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+            circle.setAttribute('cx', '2');
+            circle.setAttribute('cy', '7');
+            circle.setAttribute('r', '2');
+            circle.setAttribute('fill', 'none');
+            circle.setAttribute('stroke', '#333');
+            circle.setAttribute('stroke-width', '2');
+            groupOptional.appendChild(circle);
+            const line1o = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+            line1o.setAttribute('x1', '4');
+            line1o.setAttribute('y1', '4');
+            line1o.setAttribute('x2', '4');
+            line1o.setAttribute('y2', '10');
+            line1o.setAttribute('stroke', '#333');
+            line1o.setAttribute('stroke-width', '2');
+            groupOptional.appendChild(line1o);
+            const line2o = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+            line2o.setAttribute('x1', '4');
+            line2o.setAttribute('y1', '7');
+            line2o.setAttribute('x2', '10');
+            line2o.setAttribute('y2', '3');
+            line2o.setAttribute('stroke', '#333');
+            line2o.setAttribute('stroke-width', '2');
+            groupOptional.appendChild(line2o);
+            const line3o = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+            line3o.setAttribute('x1', '4');
+            line3o.setAttribute('y1', '7');
+            line3o.setAttribute('x2', '10');
+            line3o.setAttribute('y2', '11');
+            line3o.setAttribute('stroke', '#333');
+            line3o.setAttribute('stroke-width', '2');
+            groupOptional.appendChild(line3o);
+            markerOptional.appendChild(groupOptional);
+            defs.appendChild(markerOptional);
+            
+            // Default marker (backward compatibility)
+            const markerDefault = markerMandatory.cloneNode(true);
+            markerDefault.setAttribute('id', 'crowfoot');
+            defs.appendChild(markerDefault);
+            
+            svg.appendChild(defs);
+            
+            // Helper function to detect if table is fact or dimension
+            function isFactTable(tableName) {
+                const name = tableName.toUpperCase();
+                return name.includes('FACT') || name.startsWith('FACT_') || 
+                       (name.includes('SALES') && !name.includes('DIM')) ||
+                       (name.includes('TRANSACTION') && !name.includes('DIM'));
+            }
+            
+            // Collect entities to show in ERD
+            let selectedEntities = [];
+            
+            if (currentEntity) {
+                // Show selected entity and its related entities
+                selectedEntities.push(currentEntity);
+                relationships.forEach(r => {
+                    if (r.from === currentEntity && !selectedEntities.includes(r.to)) selectedEntities.push(r.to);
+                    if (r.to === currentEntity && !selectedEntities.includes(r.from)) selectedEntities.push(r.from);
+                });
+            } else if (currentSubDomain && currentDomain) {
+                // Show all entities in the subdomain
+                const subDomain = hierarchical[currentDomain][currentSubDomain];
+                selectedEntities = Object.keys(subDomain);
+            } else if (currentDomain) {
+                // Show all entities in the domain
+                const domain = hierarchical[currentDomain];
+                Object.values(domain).forEach(subDomain => {
+                    Object.keys(subDomain).forEach(entity => {
+                        if (!selectedEntities.includes(entity)) selectedEntities.push(entity);
+                    });
+                });
+            } else {
+                // Show all entities
+                Object.values(hierarchical).forEach(domain => {
+                    Object.values(domain).forEach(subDomain => {
+                        Object.keys(subDomain).forEach(entity => {
+                            if (!selectedEntities.includes(entity)) selectedEntities.push(entity);
+                        });
+                    });
+                });
+            }
+            
+            // Calculate grid layout with better spacing
+            const cols = Math.ceil(Math.sqrt(selectedEntities.length * 1.2)); // Slightly wider grid
+            const tableWidth = 240;
+            const tableSpacing = 320; // Increased spacing for cleaner look
+            const startX = 60;
+            const startY = 60;
+            
+            // Create entity boxes (logical model)
+            selectedEntities.forEach((entityName, index) => {
+                // Find entity data from logical model
+                let entity = null;
+                for (const [domainName, domain] of Object.entries(logicalData)) {
+                    for (const [subDomainName, subDomain] of Object.entries(domain)) {
+                        if (subDomain[entityName]) {
+                            entity = subDomain[entityName];
+                            break;
+                        }
+                    }
+                    if (entity) break;
+                }
+                
+                if (!entity) return;
+                
+                // Calculate position
+                const row = Math.floor(index / cols);
+                const col = index % cols;
+                const x = startX + col * tableSpacing;
+                const y = startY + row * tableSpacing;
+                
+                // Store position for relationship lines
+                tablePositions.set(entityName, { x, y, width: tableWidth });
+                
+                // Detect if this is a fact or dimension entity
+                const isFact = isFactTable(entityName);
+                
+                // Create entity box
+                const tableBox = document.createElement('div');
+                tableBox.className = isFact ? 'table-box fact-table' : 'table-box dimension-table';
+                tableBox.id = `table-${entityName}`;
+                tableBox.style.left = x + 'px';
+                tableBox.style.top = y + 'px';
+                
+                // Entity header (fixed)
+                const header = document.createElement('div');
+                header.className = isFact ? 'table-header fact-header' : 'table-header';
+                header.textContent = entityName;
+                tableBox.appendChild(header);
+                
+                // Entity body (scrollable) - Show ALL attributes
+                const tableBody = document.createElement('div');
+                tableBody.className = 'table-body';
+                
+                entity.attributes.forEach(attr => {
+                    const attrDiv = document.createElement('div');
+                    attrDiv.className = 'table-column';
+                    
+                    const nameSpan = document.createElement('span');
+                    nameSpan.className = 'column-name';
+                    nameSpan.textContent = attr.attributeName;
+                    
+                    // Use logical type (TEXT, NUMBER, DATE, BOOLEAN)
+                    const logicalType = attr.logicalType || 'TEXT';
+                    
+                    const typeSpan = document.createElement('span');
+                    typeSpan.className = 'column-type';
+                    typeSpan.textContent = logicalType;
+                    
+                    // PK/FK indicators - keep clean, no icons (per reference image)
+                    
+                    attrDiv.appendChild(nameSpan);
+                    attrDiv.appendChild(typeSpan);
+                    tableBody.appendChild(attrDiv);
+                });
+                
+                tableBox.appendChild(tableBody);
+                
+                canvas.appendChild(tableBox);
+                makeTableDraggable(tableBox);
+            });
+            
+            // Draw relationship lines after tables are rendered
+            setTimeout(() => {
+                updateRelationshipLines();
+            }, 100);
+            
+            // Update SVG size to cover entire canvas
+            setTimeout(() => {
+                const container = document.getElementById('erd-container');
+                const maxY = Math.max(...Array.from(tablePositions.values()).map(pos => pos.y + 300), 500);
+                svg.setAttribute('width', container.scrollWidth || '100%');
+                svg.setAttribute('height', Math.max(maxY, container.scrollHeight || 500) + 'px');
+                canvas.style.minHeight = maxY + 'px';
+                updateRelationshipLines(); // Ensure lines are drawn after size update
+            }, 150);
+        }
+        
+        function renderNavigation() {
+            const nav = document.getElementById('navigation');
+            nav.innerHTML = '<h3 style="margin-bottom: 15px; color: #059669;">📁 Navigation</h3>';
+            
+            for (const [domainName, domain] of Object.entries(hierarchical)) {
+                const domainEl = document.createElement('div');
+                domainEl.className = 'domain-item';
+                domainEl.textContent = `📂 ${domainName}`;
+                domainEl.onclick = () => showDomain(domainName);
+                nav.appendChild(domainEl);
+                
+                // If this domain is currently selected, show its subdomains
+                if (currentDomain === domainName) {
+                    for (const [subDomainName, subDomain] of Object.entries(domain)) {
+                        const subDomainEl = document.createElement('div');
+                        subDomainEl.className = 'subdomain-item';
+                        const entityCount = Object.keys(subDomain).length;
+                        subDomainEl.textContent = `  📁 ${subDomainName} (${entityCount})`;
+                        subDomainEl.onclick = (e) => {
+                            e.stopPropagation();
+                            showSubDomain(domainName, subDomainName);
+                        };
+                        nav.appendChild(subDomainEl);
+                    }
+                }
+            }
+        }
+        
+        function showDomains() {
+            currentDomain = null;
+            currentSubDomain = null;
+            currentEntity = null;
+            
+            updateBreadcrumb([]);
+            renderERD();
+        }
+        
+        function showDomain(domainName) {
+            currentDomain = domainName;
+            currentSubDomain = null;
+            currentEntity = null;
+            
+            updateBreadcrumb([{ type: 'domain', name: domainName }]);
+            renderNavigation();
+            renderERD();
+        }
+        
+        function showSubDomain(domainName, subDomainName) {
+            currentDomain = domainName;
+            currentSubDomain = subDomainName;
+            currentEntity = null;
+            
+            updateBreadcrumb([
+                { type: 'domain', name: domainName },
+                { type: 'subdomain', name: subDomainName }
+            ]);
+            
+            renderNavigation();
+            renderERD();
+        }
+        
+        function showEntity(domainName, subDomainName, entityName) {
+            currentDomain = domainName;
+            currentSubDomain = subDomainName;
+            currentEntity = entityName;
+            
+            updateBreadcrumb([
+                { type: 'domain', name: domainName },
+                { type: 'subdomain', name: subDomainName },
+                { type: 'entity', name: entityName }
+            ]);
+            
+            renderERD();
+        }
+        
+        function updateBreadcrumb(path) {
+            // Breadcrumb removed from canvas - navigation is sidebar only
+            // This function kept for compatibility but does nothing
+            return;
+            const breadcrumb = document.getElementById('breadcrumb');
+            if (!breadcrumb) return;
+            if (path.length === 0) {
+                breadcrumb.innerHTML = '<div class="breadcrumb"><span class="breadcrumb-item" onclick="showDomains()">🏠 Home</span></div>';
+                return;
+            }
+            
+            let html = '<div class="breadcrumb"><span class="breadcrumb-item" onclick="showDomains()">🏠 Home</span>';
+            
+            for (let i = 0; i < path.length; i++) {
+                const item = path[i];
+                html += '<span class="breadcrumb-separator">›</span>';
+                
+                if (item.type === 'domain') {
+                    html += `<span class="breadcrumb-item" onclick="showDomain('${item.name}')">📂 ${item.name}</span>`;
+                } else if (item.type === 'subdomain') {
+                    html += `<span class="breadcrumb-item" onclick="showSubDomain('${currentDomain}', '${item.name}')">📁 ${item.name}</span>`;
+                } else if (item.type === 'entity') {
+                    html += `<span class="breadcrumb-item">📊 ${item.name}</span>`;
+                }
+            }
+            
+            html += '</div>';
+            breadcrumb.innerHTML = html;
+        }
+        
+        // Zoom functions
+        function zoomIn() {
+            zoomLevel = Math.min(zoomLevel * 1.2, 3);
+            applyTransform();
+        }
+        
+        function zoomOut() {
+            zoomLevel = Math.max(zoomLevel / 1.2, 0.3);
+            applyTransform();
+        }
+        
+        function resetZoom() {
+            zoomLevel = 1;
+            panX = 0;
+            panY = 0;
+            applyTransform();
+        }
+        
+        function applyTransform() {
+            const canvas = document.getElementById('erd-canvas');
+            const svg = document.getElementById('erd-svg');
+            
+            const transform = `translate(${panX}px, ${panY}px) scale(${zoomLevel})`;
+            canvas.style.transform = transform;
+            svg.style.transform = transform;
+            // Grid background stays fixed - don't transform it
+            
+            // Update zoom level display
+            const zoomLevelEl = document.getElementById('zoom-level');
+            if (zoomLevelEl) {
+                zoomLevelEl.textContent = Math.round(zoomLevel * 100) + '%';
+            }
+            
+            // Update relationship lines when zoom/pan changes
+            setTimeout(() => updateRelationshipLines(), 50);
+        }
+        
+        // Pan functionality
+        const container = document.getElementById('erd-container');
+        
+        container.addEventListener('mousedown', (e) => {
+            // Don't pan in presentation mode
+            if (presentationMode) return;
+            
+            // Don't pan if clicking on a table or zoom controls
+            if (e.target.closest('.table-box') || e.target.closest('.zoom-controls')) {
+                return;
+            }
+            
+            isPanning = true;
+            panStartX = e.clientX - panX;
+            panStartY = e.clientY - panY;
+            container.classList.add('panning');
+            e.preventDefault();
+        });
+        
+        document.addEventListener('mousemove', (e) => {
+            if (isPanning) {
+                panX = e.clientX - panStartX;
+                panY = e.clientY - panStartY;
+                applyTransform();
+            }
+            
+            if (isDragging && dragElement) {
+                const canvas = document.getElementById('erd-canvas');
+                const container = document.getElementById('erd-container');
+                const containerRect = container.getBoundingClientRect();
+                
+                // Calculate position accounting for zoom and pan
+                const x = (e.clientX - containerRect.left - panX) / zoomLevel - dragOffsetX;
+                const y = (e.clientY - containerRect.top - panY) / zoomLevel - dragOffsetY;
+                
+                dragElement.style.left = x + 'px';
+                dragElement.style.top = y + 'px';
+                
+                // Update relationship lines
+                updateRelationshipLines();
+            }
+        });
+        
+        document.addEventListener('mouseup', () => {
+            if (isPanning) {
+                isPanning = false;
+                container.classList.remove('panning');
+            }
+            
+            if (isDragging) {
+                isDragging = false;
+                if (dragElement) {
+                    dragElement.classList.remove('dragging');
+                    dragElement = null;
+                }
+            }
+        });
+        
+        // Mouse wheel zoom
+        container.addEventListener('wheel', (e) => {
+            // Don't zoom in presentation mode
+            if (presentationMode) return;
+            
+            if (e.target.closest('.table-box') || e.target.closest('.zoom-controls')) {
+                return;
+            }
+            
+            e.preventDefault();
+            const delta = e.deltaY > 0 ? 0.9 : 1.1;
+            zoomLevel = Math.max(0.3, Math.min(3, zoomLevel * delta));
+            applyTransform();
+        });
+        
+        // Make tables draggable
+        function makeTableDraggable(tableBox) {
+            tableBox.addEventListener('mousedown', (e) => {
+                // Don't drag in presentation mode
+                if (presentationMode) return;
+                
+                if (e.target.closest('.table-header') || e.target.closest('.table-column')) {
+                    isDragging = true;
+                    dragElement = tableBox;
+                    dragElement.classList.add('dragging');
+                    
+                    // Get the current position of the table
+                    const currentLeft = parseFloat(tableBox.style.left) || 0;
+                    const currentTop = parseFloat(tableBox.style.top) || 0;
+                    const container = document.getElementById('erd-container');
+                    const containerRect = container.getBoundingClientRect();
+                    
+                    // Calculate offset from mouse to table top-left, accounting for zoom
+                    dragOffsetX = (e.clientX - containerRect.left - panX) / zoomLevel - currentLeft;
+                    dragOffsetY = (e.clientY - containerRect.top - panY) / zoomLevel - currentTop;
+                    
+                    e.stopPropagation();
+                }
+            });
+        }
+        
+        // Update relationship lines when tables move
+        function updateRelationshipLines() {
+            const svg = document.getElementById('erd-svg');
+            const canvas = document.getElementById('erd-canvas');
+            const container = document.getElementById('erd-container');
+            const containerRect = container.getBoundingClientRect();
+            
+            // Get selected entities
+            let selectedEntities = [];
+            if (currentEntity) {
+                selectedEntities.push(currentEntity);
+                relationships.forEach(r => {
+                    if (r.from === currentEntity && !selectedEntities.includes(r.to)) selectedEntities.push(r.to);
+                    if (r.to === currentEntity && !selectedEntities.includes(r.from)) selectedEntities.push(r.from);
+                });
+            } else if (currentSubDomain && currentDomain) {
+                const subDomain = hierarchical[currentDomain][currentSubDomain];
+                selectedEntities = Object.keys(subDomain);
+            } else if (currentDomain) {
+                const domain = hierarchical[currentDomain];
+                Object.values(domain).forEach(subDomain => {
+                    Object.keys(subDomain).forEach(entity => {
+                        if (!selectedEntities.includes(entity)) selectedEntities.push(entity);
+                    });
+                });
+            } else {
+                Object.values(hierarchical).forEach(domain => {
+                    Object.values(domain).forEach(subDomain => {
+                        Object.keys(subDomain).forEach(entity => {
+                            if (!selectedEntities.includes(entity)) selectedEntities.push(entity);
+                        });
+                    });
+                });
+            }
+            
+            // Remove old relationship lines and labels
+            const oldElements = svg.querySelectorAll('.relationship-line, .relationship-label-box, .relationship-label-text, .cardinality-box, .cardinality-text');
+            oldElements.forEach(el => el.remove());
+            
+            // Helper function to determine cardinality for logical model
+            function getCardinality(rel) {
+                // In logical models, relationships can be 1-1, 1-M, or M-N
+                // For now, assume standard relationship is 1-M unless specified
+                // Check if relationship has cardinality info
+                if (rel.cardinality) {
+                    return {
+                        fromCardinality: rel.cardinality.from || '1',
+                        toCardinality: rel.cardinality.to || '*',
+                        relationshipType: rel.cardinality.type || '1-M'
+                    };
+                }
+                // Default to 1-M
+                return {
+                    fromCardinality: '1',
+                    toCardinality: '*',
+                    relationshipType: '1-M'
+                };
+            }
+            
+            // Redraw relationship lines
+            relationships.forEach(rel => {
+                if (!selectedEntities.includes(rel.from) || !selectedEntities.includes(rel.to)) return;
+                
+                const fromTable = document.getElementById(`table-${rel.from}`);
+                const toTable = document.getElementById(`table-${rel.to}`);
+                
+                if (!fromTable || !toTable) return;
+                
+                // Get table positions relative to container (for edge routing)
+                const fromRect = fromTable.getBoundingClientRect();
+                const toRect = toTable.getBoundingClientRect();
+                const containerRect = container.getBoundingClientRect();
+                
+                // Calculate table centers
+                const fromCenterX = (fromRect.left + fromRect.right) / 2;
+                const fromCenterY = (fromRect.top + fromRect.bottom) / 2;
+                const toCenterX = (toRect.left + toRect.right) / 2;
+                const toCenterY = (toRect.top + toRect.bottom) / 2;
+                
+                // Determine which edges to connect (smart routing - avoid corners)
+                const dx = toCenterX - fromCenterX;
+                const dy = toCenterY - fromCenterY;
+                const absDx = Math.abs(dx);
+                const absDy = Math.abs(dy);
+                
+                let fromX, fromY, toX, toY;
+                
+                // Connect to nearest edges (not corners)
+                if (absDx > absDy) {
+                    // Horizontal connection
+                    fromX = dx > 0 ? fromRect.right - containerRect.left : fromRect.left - containerRect.left;
+                    fromY = fromCenterY - containerRect.top;
+                    toX = dx > 0 ? toRect.left - containerRect.left : toRect.right - containerRect.left;
+                    toY = toCenterY - containerRect.top;
+                } else {
+                    // Vertical connection
+                    fromX = fromCenterX - containerRect.left;
+                    fromY = dy > 0 ? fromRect.bottom - containerRect.top : fromRect.top - containerRect.top;
+                    toX = toCenterX - containerRect.left;
+                    toY = dy > 0 ? toRect.top - containerRect.top : toRect.bottom - containerRect.top;
+                }
+                
+                // Create path with right-angle routing
+                const midX = (fromX + toX) / 2;
+                const midY = (fromY + toY) / 2;
+                
+                let pathData;
+                if (absDx > absDy) {
+                    pathData = `M ${fromX} ${fromY} L ${midX} ${fromY} L ${midX} ${toY} L ${toX} ${toY}`;
+                } else {
+                    pathData = `M ${fromX} ${fromY} L ${fromX} ${midY} L ${toX} ${midY} L ${toX} ${toY}`;
+                }
+                
+                // Get cardinality
+                const cardinality = getCardinality(rel);
+                
+                // Draw relationship line
+                const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+                path.setAttribute('d', pathData);
+                path.setAttribute('class', 'relationship-line');
+                path.setAttribute('stroke', '#333');
+                path.setAttribute('stroke-width', '2');
+                path.setAttribute('fill', 'none');
+                path.setAttribute('marker-end', 'url(#crowfoot-mandatory)');
+                svg.appendChild(path);
+                
+                // Add cardinality notation at FROM end
+                const fromCardX = fromX + (absDx > absDy ? (dx > 0 ? -25 : 25) : 0);
+                const fromCardY = fromY + (absDx > absDy ? 0 : (dy > 0 ? -25 : 25));
+                const fromCardBox = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+                fromCardBox.setAttribute('x', fromCardX - 8);
+                fromCardBox.setAttribute('y', fromCardY - 8);
+                fromCardBox.setAttribute('width', '16');
+                fromCardBox.setAttribute('height', '16');
+                fromCardBox.setAttribute('class', 'cardinality-box');
+                svg.appendChild(fromCardBox);
+                const fromCardText = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+                fromCardText.setAttribute('x', fromCardX);
+                fromCardText.setAttribute('y', fromCardY);
+                fromCardText.setAttribute('class', 'cardinality-text');
+                fromCardText.textContent = cardinality.fromCardinality;
+                svg.appendChild(fromCardText);
+                
+                // Add cardinality notation at TO end
+                const toCardX = toX + (absDx > absDy ? (dx > 0 ? 25 : -25) : 0);
+                const toCardY = toY + (absDx > absDy ? 0 : (dy > 0 ? 25 : -25));
+                const toCardBox = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+                toCardBox.setAttribute('x', toCardX - 8);
+                toCardBox.setAttribute('y', toCardY - 8);
+                toCardBox.setAttribute('width', '16');
+                toCardBox.setAttribute('height', '16');
+                toCardBox.setAttribute('class', 'cardinality-box');
+                svg.appendChild(toCardBox);
+                const toCardText = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+                toCardText.setAttribute('x', toCardX);
+                toCardText.setAttribute('y', toCardY);
+                toCardText.setAttribute('class', 'cardinality-text');
+                toCardText.textContent = cardinality.toCardinality;
+                svg.appendChild(toCardText);
+                
+                // Add relationship label in a box at the middle of the line
+                const relLabel = rel.relationshipName || (rel.fromCol && rel.toCol ? `${rel.fromCol} → ${rel.toCol}` : `${rel.from} → ${rel.to}`);
+                const labelBox = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+                const labelText = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+                const textLength = relLabel.length * 5.5; // Approximate text width
+                labelBox.setAttribute('x', midX - textLength / 2 - 4);
+                labelBox.setAttribute('y', midY - 9);
+                labelBox.setAttribute('width', textLength + 8);
+                labelBox.setAttribute('height', '16');
+                labelBox.setAttribute('class', 'relationship-label-box');
+                svg.appendChild(labelBox);
+                labelText.setAttribute('x', midX);
+                labelText.setAttribute('y', midY);
+                labelText.setAttribute('class', 'relationship-label-text');
+                labelText.textContent = relLabel;
+                svg.appendChild(labelText);
+            });
+        }
+        
+        // Star Schema Layout Function
+        function applyStarLayout() {
+            const canvas = document.getElementById('erd-canvas');
+            const tables = canvas.querySelectorAll('.table-box');
+            
+            if (tables.length === 0) return;
+            
+            // Find fact table (center)
+            let factTable = null;
+            let dimensionTables = [];
+            
+            tables.forEach(table => {
+                if (table.classList.contains('fact-table')) {
+                    factTable = table;
+                } else {
+                    dimensionTables.push(table);
+                }
+            });
+            
+            // If no fact table found, use first table or largest table
+            if (!factTable && tables.length > 0) {
+                factTable = tables[0];
+            }
+            
+            if (!factTable) return;
+            
+            // Get container dimensions
+            const container = document.getElementById('erd-container');
+            const centerX = container.clientWidth / 2;
+            const centerY = container.clientHeight / 2;
+            
+            // Position fact table at center
+            const factRect = factTable.getBoundingClientRect();
+            const factWidth = factRect.width / zoomLevel;
+            const factHeight = factRect.height / zoomLevel;
+            factTable.style.left = (centerX - factWidth / 2) + 'px';
+            factTable.style.top = (centerY - factHeight / 2) + 'px';
+            
+            // Arrange dimensions in a circle around fact table
+            const radius = 350; // Distance from center
+            const angleStep = (2 * Math.PI) / Math.max(dimensionTables.length, 1);
+            
+            dimensionTables.forEach((dimTable, index) => {
+                const angle = index * angleStep;
+                const dimRect = dimTable.getBoundingClientRect();
+                const dimWidth = dimRect.width / zoomLevel;
+                const dimHeight = dimRect.height / zoomLevel;
+                
+                const x = centerX + radius * Math.cos(angle) - dimWidth / 2;
+                const y = centerY + radius * Math.sin(angle) - dimHeight / 2;
+                
+                dimTable.style.left = x + 'px';
+                dimTable.style.top = y + 'px';
+            });
+            
+            // Update relationship lines
+            setTimeout(() => updateRelationshipLines(), 100);
+        }
+        
+        // Make functions global for onclick handlers
+        // Presentation mode toggle
+        let presentationMode = false;
+        function togglePresentationMode() {
+            presentationMode = !presentationMode;
+            const container = document.getElementById('erd-container');
+            if (presentationMode) {
+                container.classList.add('presentation-mode');
+                // Disable panning and dragging
+                isPanning = false;
+                isDragging = false;
+            } else {
+                container.classList.remove('presentation-mode');
+            }
+        }
+        
+        // Make functions global for onclick handlers
+        window.showDomains = showDomains;
+        window.showDomain = showDomain;
+        window.showSubDomain = showSubDomain;
+        window.showEntity = showEntity;
+        window.zoomIn = zoomIn;
+        window.zoomOut = zoomOut;
+        window.resetZoom = resetZoom;
+        window.applyStarLayout = applyStarLayout;
+        window.togglePresentationMode = togglePresentationMode;
+    </script>
+</body>
+</html>

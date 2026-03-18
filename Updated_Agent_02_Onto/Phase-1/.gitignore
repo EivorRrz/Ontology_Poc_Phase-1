@@ -1,0 +1,11 @@
+node_modules/
+.env
+*.log
+.DS_Store
+models/*.gguf
+coverage/
+# Generated artifacts and uploads (should not be in source control)
+artifacts/
+uploads/
+src/artifacts/
+src/uploads/

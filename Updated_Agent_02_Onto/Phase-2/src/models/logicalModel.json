@@ -1,0 +1,111 @@
+{
+  "Portfolio": {
+    "portfolio_id": "string",
+    "portfolio_identifier": "string",
+    "portfolio_name": "string",
+    "portfolio_type": "string",
+    "base_currency": "string",
+    "inception_date": "date",
+    "status": "string"
+  },
+  "Security": {
+    "security_id": "string",
+    "cusip": "string",
+    "sedol": "string",
+    "isin": "string",
+    "instrument_type": "string",
+    "security_description": "string",
+    "country": "string",
+    "risk_country": "string",
+    "issue_date": "date",
+    "maturity_date": "date",
+    "coupon_rate": "decimal",
+    "currency": "string"
+  },
+  "Position": {
+    "position_id": "string",
+    "portfolio_id": "string",
+    "security_id": "string",
+    "position_date": "date",
+    "quantity": "decimal",
+    "face_value": "decimal",
+    "market_value": "decimal",
+    "accrued_interest": "decimal"
+  },
+  "Holding": {
+    "holding_id": "string",
+    "portfolio_id": "string",
+    "security_id": "string",
+    "as_of_date": "date",
+    "market_value": "decimal",
+    "accrued_interest": "decimal",
+    "book_value": "decimal",
+    "unrealized_pnl": "decimal"
+  },
+  "Valuation": {
+    "valuation_id": "string",
+    "security_id": "string",
+    "valuation_date": "date",
+    "price_used": "decimal",
+    "clean_market_value": "decimal",
+    "dirty_market_value": "decimal",
+    "accrued_interest": "decimal",
+    "currency": "string"
+  },
+  "Trade": {
+    "confirmation_id": "string",
+    "trade_order_id": "string",
+    "trade_date": "date",
+    "counterparty": "string",
+    "trade_status": "string",
+    "settlement_id": "string",
+    "settlement_date": "date",
+    "settlement_amount": "decimal",
+    "settlement_currency": "string",
+    "settlement_status": "string"
+  },
+  "Benchmark": {
+    "benchmark_id": "string",
+    "benchmark_name": "string",
+    "benchmark_type": "string",
+    "base_currency": "string",
+    "effective_date": "date",
+    "expiry_date": "date",
+    "portfolio_id": "string",
+    "allocation_pct": "decimal"
+  },
+  "Performance": {
+    "performance_id": "string",
+    "portfolio_id": "string",
+    "as_of_date": "date",
+    "portfolio_return": "decimal",
+    "benchmark_return": "decimal",
+    "alpha": "decimal",
+    "beta": "decimal",
+    "sharpe_ratio": "decimal",
+    "volatility": "decimal",
+    "attribution_id": "string",
+    "asset_class": "string",
+    "contribution_to_return": "decimal",
+    "contribution_to_risk": "decimal",
+    "attribution_date": "date"
+  },
+  "Risk": {
+    "risk_id": "string",
+    "portfolio_id": "string",
+    "as_of_date": "date",
+    "var": "decimal",
+    "cvar": "decimal",
+    "beta": "decimal",
+    "duration": "decimal",
+    "volatility": "decimal"
+  },
+  "ReferenceData": {
+    "asset_class_code": "string",
+    "asset_class_name": "string",
+    "exchange_id": "string",
+    "holiday_date": "date",
+    "holiday_name": "string",
+    "trading_status": "string"
+  }
+}

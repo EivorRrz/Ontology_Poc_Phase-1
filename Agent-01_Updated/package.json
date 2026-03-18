@@ -1,0 +1,46 @@
+{
+  "name": "document-to-graph-pipeline",
+  "version": "1.0.0",
+  "description": "End-to-end system to parse business documents and generate Neo4j graphs",
+  "main": "src/server.js",
+  "type": "module",
+  "scripts": {
+    "start": "node src/server.js",
+    "dev": "node --watch src/server.js",
+    "test": "node src/scripts/test-pipeline.js",
+    "setup-neo4j": "node src/scripts/setup-neo4j-constraints.js",
+    "test-neo4j": "node src/scripts/test-neo4j-connection.js",
+    "watch": "node src/scripts/file-watcher.js",
+    "check-doc": "node src/scripts/check-document-status.js"
+  },
+  "keywords": [
+    "neo4j",
+    "graph",
+    "document-parsing",
+    "cypher",
+    "llm"
+  ],
+  "author": "",
+  "license": "MIT",
+  "dependencies": {
+    "@langchain/core": "^0.3.0",
+    "@langchain/langgraph": "^0.2.0",
+    "@langchain/openai": "^0.3.0",
+    "axios": "^1.6.2",
+    "openai": "^6.17.0",
+    "chokidar": "^3.6.0",
+    "dotenv": "^16.3.1",
+    "express": "^4.18.2",
+    "form-data": "^4.0.0",
+    "mammoth": "^1.6.0",
+    "mongoose": "^8.0.3",
+    "multer": "^1.4.5-lts.1",
+    "neo4j-driver": "^5.15.0",
+    "pdf-parse": "^1.1.1",
+    "winston": "^3.11.0",
+    "zod": "^3.23.0"
+  },
+  "devDependencies": {
+    "nodemon": "^3.0.2"
+  }
+}
